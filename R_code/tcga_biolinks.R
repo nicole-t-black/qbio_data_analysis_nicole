@@ -20,18 +20,18 @@ if (!require(TCGAbiolinks)) BiocManager::install("TCGAbiolinks")
 library(TCGAbiolinks)
 
 #Group 1
-# library(SummarizedExperiment) #look up how a SummarizedExperiment is built
-# clinical_file <- read.csv("data/tcga_brca_six_example_clinical.csv")
-# barcodes <- as.character( clinical_file$barcode )
-# query <- GDCquery(project = "TCGA-BRCA",
-#                   data.category = "Transcriptome Profiling",
-#                   data.type = "Gene Expression Quantification",
-#                   workflow.type = "HTSeq - Counts",
-#                   barcode = c(barcodes))
-#
-# GDCdownload(query)
-# data <- GDCprepare(query)
-#str(data) #use this line if you are typing in the command line
+ library(SummarizedExperiment) #look up how a SummarizedExperiment is built
+ clinical_file <- read.csv("data/tcga_brca_six_example_clinical.csv")
+ barcodes <- as.character( clinical_file$barcode )
+ query <- GDCquery(project = "TCGA-BRCA",
+                   data.category = "Transcriptome Profiling",
+                   data.type = "Gene Expression Quantification",
+                   workflow.type = "HTSeq - Counts",
+                   barcode = c(barcodes))
+
+ GDCdownload(query)
+ data <- GDCprepare(query)
+str(data) #use this line if you are typing in the command line
 
 #Group 2
 # clinical_file <- read.csv("data/tcga_brca_six_example_clinical.csv")
