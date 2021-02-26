@@ -40,6 +40,7 @@ library(TCGAbiolinks) #load library NB
  library(survival) #load survival package
  library(survminer) #load survminer package
  library(arsenal) #load arsenal package
+# library(dplyr) #unsure if I need this, or what exactly it does
  clin_query <- GDCquery(project = "TCGA-BRCA", data.category="Clinical", file.type="xml")  #searches GDC for clinical TCGA-BRCA data and loads to clin_query
 # GDCdownload( clin_query ) #downloads clin_query data onto local machine, only need to do once, so commented out
  clinic <- GDCprepare_clinic(clin_query, clinical.info="patient") #prepares clin_query data into SE
