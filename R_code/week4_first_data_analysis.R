@@ -1,5 +1,6 @@
-#Installs TCGAbiolinks if not already present
+# Installs TCGAbiolinks if not already present
 if (!require(TCGAbiolinks)) BiocManager::install("TCGAbiolinks")
+library(TCGAbiolinks)
 
 #What line of code needs to be added before using TCGAbiolinks?
 
@@ -36,33 +37,46 @@ if (!require(TCGAbiolinks)) BiocManager::install("TCGAbiolinks")
 # Use rsync to copy your create pngfile to local machine for viewing
 
 #######    Group 2: clinical   ###########
-# install.packages(c("survival", "survminer", "arsenal")) #1-3) loads packages
-# library(survival) #1) What do you need to do before running this line?
-# library(survminer) #2) What do you need to do before running this line?
-# library(arsenal) #3) What do you need to do before running this line?
-# clin_query <- GDCquery(project = "TCGA-BRCA", data.category="Clinical", file.type="xml")
-# GDCdownload( clin_query ) #should only need this command once. This downloads the files onto your system.
-# clinic <- GDCprepare_clinic(clin_query, clinical.info="patient")
-# names(clinic)[names(clinic) == "days_to_last_followup"] = "days_to_last_follow_up"
-
+ install.packages("survival")
+ install.packages("survminer")
+ install.packages("arsenal")
+ library(survival) #1) What do you need to do before running this line?
+ library(survminer) #2) What do you need to do before running this line?
+ library(arsenal) #3) What do you need to do before running this line?
+ clin_query <- GDCquery(project = "TCGA-BRCA", data.category="Clinical", file.type="xml")
+ GDCdownload( clin_query ) #should only need this command once. This downloads the files onto your system.
+ clinic <- GDCprepare_clinic(clin_query, clinical.info="patient")
+ names(clinic)[names(clinic) == "days_to_last_followup"] = "days_to_last_follow_up"
+ 
 #Add a new column to clinic called "age_category"
 #If age_at_initial_pathologic_diagnosis is < 40, define patient as "Young" in new column
 #If age_at_initial_pathologic_diagnosis is >= 60, define patient as "Old" in new column
 #Other patients (between 40 and 60), define as "Mid"
+ 
+ clinic$age_category = ifelse(clinic$age_at_initial_pathologic_diagnosis < 40, "Young", ifelse(clinic$age_at_initial_pathologic_diagnosis >= 60, "Old", "Mid"))
 
 #use tableone to create summary of clinic data
-# subtypes <- TCGAquery_subtype(tumor = "BRCA")
-# Add the age_category column in the same way as above
-# How many patients are in subtypes vs clinic? Why?
-
+ 
+ install.packages("tableone")
+ library(tableone)
+ clinic_summary <- CreateTableOne(data = clinic)
+ 
+ subtypes <- TCGAquery_subtype(tumor = "BRCA")
+ subtypes$age_category = ifelse(subtypes$age_at_initial_pathologic_diagnosis < 40, "Young", ifelse(subtypes$age_at_initial_pathologic_diagnosis >= 60, "Old", "Mid"))
+ 
+ # Add the age_category column in the same way as above
+# How many patients are in subtypes vs clinic? Why? 1087-subtypes, 1174-clinic
+ 
 # BELOW CODE WILL NOT RUN. This is an example from another dataset
 # Consider what you need to change for it to run on clinic
 # Hint: age_category stays the same. "Oncotree.Code" was the name of a column
 # Option to use either subtypes or clinic dataframe
-# table_arse <- tableby(age_category ~ (Age.at.Diagnosis) +(Oncotree.Code) +
-#          (ER.Status) + (Pam50) + (Tumor.Stage) + (Ethnicity.Call), data=clinic_oneone,
-#          numeric.test="kwt", cat.test="fe", numeric.stats = c("Nmiss", "meansd"), total=FALSE)
-# df <- as.data.frame( summary(table_arse, text=TRUE, pfootnote=TRUE) )                                                                                                                                                                                             df <- as.data.frame( summary(table_arse, text=TRUE, pfootnote=TRUE) )
+
+ 
+table_arse <- tableby(age_category ~ (pathologic_stage)+ (subtypes$`mRNA Clusters`)+ (BRCA_Pathology)+ (BRCA_Subtype_PAM50),
+          data=subtypes,
+          numeric.test="kwt", numeric.stats = c("Nmiss", "meansd"), total=FALSE)
+df <- as.data.frame(summary(table_arse, text=TRUE, pfootnote=TRUE))                                                                                                                                                                                             df <- as.data.frame( summary(table_arse, text=TRUE, pfootnote=TRUE) )
 # write.csv(df, “filepath/filename.csv”, row.names=FALSE)
 
 # Modify below code for different variables of interest
