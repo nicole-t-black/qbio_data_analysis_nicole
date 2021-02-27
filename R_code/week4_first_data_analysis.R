@@ -1,5 +1,5 @@
 if (!require(TCGAbiolinks)) BiocManager::install("TCGAbiolinks")
-library(TCGAbiolinks) #load library NB
+library(TCGAbiolinks) #load TCGAbiolinks package
 
 #add barcodes argument to query if you want to run on your local machine for smaller files downloaded
 #barcodes_rnaseq <- c("TCGA-BH-A0DG-01A-21R-A12P-07","TCGA-A2-A0YF-01A-21R-A109-07",
@@ -34,15 +34,15 @@ library(TCGAbiolinks) #load library NB
 # Use rsync to copy your create pngfile to local machine for viewing
 
 #######    Group 2: clinical   ###########
- install.packages("survival") #install survival package
- install.packages("survminer") #install survminer package
- install.packages("arsenal") #install arsenal package
+# install.packages("survival") #install survival package (only need to do once)
+# install.packages("survminer") #install survminer package (only need to do once)
+# install.packages("arsenal") #install arsenal package (only need to do once)
  library(survival) #load survival package
  library(survminer) #load survminer package
  library(arsenal) #load arsenal package
 # library(dplyr) #unsure if I need this, or what exactly it does
  clin_query <- GDCquery(project = "TCGA-BRCA", data.category="Clinical", file.type="xml")  #searches GDC for clinical TCGA-BRCA data and loads to clin_query
-# GDCdownload( clin_query ) #downloads clin_query data onto local machine, only need to do once, so commented out
+# GDCdownload( clin_query ) #downloads clin_query data onto local machine, (only need to do once)
  clinic <- GDCprepare_clinic(clin_query, clinical.info="patient") #prepares clin_query data into SE
  names(clinic)[names(clinic) == "days_to_last_followup"] = "days_to_last_follow_up" #formatting change in days_to_last_follow_up column
 
@@ -63,7 +63,7 @@ library(TCGAbiolinks) #load library NB
                                ifelse(clinic$stage_event_pathologic_stage == "Stage IV", "Stage IV", "Stage X"))))))))))) #adds pathologic_stage_numeric column, categorized by stage (w/o A, B, C, etc.)
 
 
- install.packages("tableone") #install package tableone
+# install.packages("tableone") #install package tableone (only need to do once)
  library(tableone) #load package tableone
  clinic_summary <- CreateTableOne(data = clinic) #creates summary of clinic data and stores in clinic_summary
  
@@ -75,11 +75,10 @@ library(TCGAbiolinks) #load library NB
  
 table_arse <- tableby(age_category ~ (pathologic_stage) + (`mRNA Clusters`) + (BRCA_Pathology),
           data=subtypes,
-          numeric.test="kwt", cat.test = "fe", numeric.stats = c("Nmiss", "meansd"),
-          simulate.p.value = TRUE, total=FALSE
-          ) #creates a table of numeric tests, y value: age; x values: pathologic stage, mRNA clusters, BRCA pathology
+          numeric.test="kwt", cat.test = "chisq", numeric.stats = c("Nmiss", "meansd"),
+          total=FALSE) #creates a table of numeric tests, y value: age; x values: pathologic stage, mRNA clusters, BRCA pathology
 df <- as.data.frame(summary(table_arse, text=TRUE, pfootnote=TRUE)) #saves above data as a data frame
-write.csv(df, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/GDCdata/table_arse.csv", row.names=FALSE) #writes data frame into .csv file
+write.csv(df, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/R_code/table_arse.csv", row.names=FALSE) #writes data frame into .csv file
 
 #creates Kaplan-Meier plots from clinic data, dependent variables: "stage_event_pathologic_stage", "age_category", etc.
 TCGAanalyze_survival( clinic, "stage_event_pathologic_stage", filename="pathologic_stage.pdf")
