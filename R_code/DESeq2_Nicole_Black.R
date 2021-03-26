@@ -94,21 +94,20 @@ dev.off()
 #What does the log2FoldChange equal, if the expression is the same in young and old patients?
       #Log2FoldChange = 0, or near to 0
 
-#On the volcano plot we can see the distribution of adjusted p values and log2FoldChanges
-#We are interested in the actual genes that are significant
-#Create results_significant_adjp with all columns of genes have padj > padj_threshold(from above)
-results_significant_adjp <- #fill in here
+results_significant_adjp <- results[results$padj > padj_threshold, ] #filters for only significant (padj > 0.05) genes, creates table
 
-#For UP regulation, we want genes that have a log2FoldChange of > log2FC_threshold
-#For DOWN regulation, we want genes that have a log2FoldChange of < -log2FC_threshold. NOTICE THE NEGATIVE SIGN
-results_sig_up_regulated <- results_significant_adjp#finish this line
-results_sig_down_regulated <- results_significant_adjp#finish this line
+results_sig_up_regulated <- results_significant_adjp[results_significant_adjp$log2FoldChange > log2FC_threshold, ] #UP regulated significant genes
+results_sig_down_regulated <- results_significant_adjp[results_significant_adjp$log2FoldChange < -log2FC_threshold, ] #DOWN regulated significant genes
 
 #How could you get the same results using the absolute value of the log2FoldChange?
+      #Not sure, I get that you can easily get the UP regulated, but not down...?
 
 #Notice that the gene names are in the ENSG00000#### format. This is the ensembl_gene_id format.
 #we probably want the "common" name of the gene.
 gene_information <- rowData(sum_exp)
+
+results_sig_up_regulated$CommonGeneName <- 
+results_sig_down_regulated$CommonGeneName <- 
 #Use gene_information$external_gene_name to create a new column in your results_sig_up_regulated and results_sig_down_regulated
 #HINT: rownames(results_sig_up_regulated) gives a list of the ENSG0000### format
 
