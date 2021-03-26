@@ -10,13 +10,13 @@ library(TCGAbiolinks) #load TCGAbiolinks package
 
 
 #######    Group 1: RNASeq     ############
-# library(SummarizedExperiment)
-# query <- GDCquery(project = "TCGA-BRCA",
-#                   data.category = "Transcriptome Profiling",
-#                   data.type = "Gene Expression Quantification",
-#                   workflow.type = "HTSeq - Counts")
-# GDCdownload(query) #only need this line of code once to download the data
-# sum_exp <- GDCprepare(query)
+ library(SummarizedExperiment)
+ query <- GDCquery(project = "TCGA-BRCA",
+                   data.category = "Transcriptome Profiling",
+                   data.type = "Gene Expression Quantification",
+                   workflow.type = "HTSeq - Counts")
+ GDCdownload(query) #only need this line of code once to download the data
+ sum_exp <- GDCprepare(query)
 # Create a tutorial on SummarizedExperiment
 
 # Boxplots by age
