@@ -106,12 +106,11 @@ results_sig_down_regulated <- results_significant_adjp[results_significant_adjp$
 #we probably want the "common" name of the gene.
 gene_information <- rowData(sum_exp)
 
-results_sig_up_regulated$CommonGeneName <- 
-results_sig_down_regulated$CommonGeneName <- 
-#Use gene_information$external_gene_name to create a new column in your results_sig_up_regulated and results_sig_down_regulated
-#HINT: rownames(results_sig_up_regulated) gives a list of the ENSG0000### format
+results_sig_up_regulated$CommonGeneName <- gene_information[rownames(results_sig_up_regulated), 2] #adds column with common gene names to results_sig_up_regulated
+results_sig_down_regulated$CommonGeneName <- gene_information[rownames(results_sig_down_regulated), 2] #adds column with common gene names to results_sig_down_regulated
 
-#Use write.csv() to save your results!
+write.csv(results_sig_up_regulated, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/results_sig_up_regulated.csv") #saves results_sig_up_regulated into .csv file
+write.csv(results_sig_down_regulated, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/results_sig_down_regulated.csv")#saves results_sig_down_regulated into .csv file
 
 ##################################################################
 #As we have touched on, there are many other variables that may influence the results between young and old
@@ -128,11 +127,61 @@ patients_no_NA_mask <- ( !is.na(colData(sum_exp)$paper_age_at_initial_pathologic
                         & !is.na(colData(sum_exp)$paper_BRCA_Pathology)
                         & !colData(sum_exp)$paper_BRCA_Pathology == "NA" )
 
-counts <- counts[ , patients_no_NA_mask ]
+patient_data <- colData(sum_exp)[ patients_no_NA_mask, ] #recreates patient_data data frame with the sum_exp data only for TRUE age, BRCA pathology, and BRCA subtypes
+
+counts <- assays(sum_exp)$"HTSeq - Counts" #manually remove existing counts in console, then use this to recreate full counts array (?) with number of counts for each gene
+
+counts <- counts[rowMeans(counts) >= 10, ] #rewrites counts with counts data for genes where mean >= 10 is TRUE
+counts <- counts[ , patients_no_NA_mask ] #rewrites counts to remove all NA patients (NA for age, BRCA subtype, BRCA pathology)
+
+patient_data$age_category = ifelse(patient_data$paper_age_at_initial_pathologic_diagnosis < 40, "Young", 
+                                   ifelse(patient_data$paper_age_at_initial_pathologic_diagnosis >= 60, "Old", "Mid")) #adds age_category column, categorized by young, mid, old
 
 #all columns must be FACTORS
 patient_data$age_category <- factor( patient_data$age_category, levels=c("Young", "Mid", "Old") )
-patient_data$paper_BRCA_Subtype_PAM50 <- factor( patient_data$paper_BRCA_Subtype_PAM50 levels=c("Her2","LumA","LumB","Basal","Normal") )
+patient_data$paper_BRCA_Subtype_PAM50 <- factor( patient_data$paper_BRCA_Subtype_PAM50, levels=c("Her2","LumA","LumB","Basal","Normal") )
 patient_data$paper_BRCA_Pathology <- factor( patient_data$paper_BRCA_Pathology, levels=c("IDC","Other","Mixed","ILC") )
 
-dds_with_adjustment <- DESeqDataSetFromMatrix(countData = counts, colData = patient_data, design = ~paper_BRCA_Pathology+ paper_BRCA_Subtype_PAM50 +age_category)
+####### Now for actual analysis part 2!! #######
+dds_with_adjustment <- DESeqDataSetFromMatrix(countData = counts, colData = patient_data, design = ~paper_BRCA_Pathology+ paper_BRCA_Subtype_PAM50 +age_category) #creates a DESeqDataSet object from the counts and patient_data matrices, using BRCA_pathology, BRCA_subtype, and age_category as the conditions
+dds_obj_with_adjustment <- DESeq(dds_with_adjustment) #runs DESeq on the DESeqDataSet object, returning results tables with log^2 fold, padj, etc. values
+resultsNames(dds_obj_with_adjustment) #lists the coefficients, "intercept", "age_category_Mid_vs_Young", "age_category_Old_vs_Young" (why no Mid vs Old?)
+
+results_with_adjustment <- results(dds_obj_with_adjustment, contrast=c("age_category", "Young",'Old')) #extracts analysis table with log^2 fold changes, standard errors, test stats, p-vales, and adjusted p-values
+#contrast=c specifies the comparison for the fold change, with age_category as the name of the factor, "Young" as the numerator, and "Old" as the denominator"
+
+head(results_with_adjustment) #look at the results
+
+#Notice, each gene has a log2FoldChange and a padj value. This is what we are interested in!
+#For clarification, please add a FoldChange column by computing 2^log2FoldChange column
+results_with_adjustment$FoldChange <- 2^results_with_adjustment$log2FoldChange #creates column in results with FoldChange
+
+#Save ALL your results to a csv file
+write.csv(results_with_adjustment, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/DESeq_Data_with_Adjustment.csv")
+
+####### Interpreting results ########
+
+#We often visualize results via a "volcano plot"
+padj_threshold <- 0.05 #significance threshold
+log2FC_threshold <- 1.0 #differential expression threshold
+jpeg("/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/DESeq_Volcano_Plot_with_Adjustment.jpg")
+plot(x= results_with_adjustment$log2FoldChange, y= -log10(results_with_adjustment$padj) ) #plots significance (-log10(padj)) vs expression (log2FoldChange)
+#abline() plots straight lines on an R plot.
+#v argument is for a vertical line, h argument is for a horizontal line. col argument is color
+abline(v=c(log2FC_threshold, -log2FC_threshold), h= c(-log10(padj_threshold)), col="green") #plots vertical lines at +/- 1 expression and horizontal at significance cutoff of 0.05
+dev.off()
+
+#stuck because it says there's an NA??? but I can't find it :(
+results_with_adjustment_significant_adjp <- results_with_adjustment[results_with_adjustment$padj > padj_threshold, ] #filters for only significant (padj > 0.05) genes, creates table
+
+results_with_adjustment_sig_up_regulated <- results_with_adjustment_significant_adjp[results_with_adjustment_significant_adjp$log2FoldChange > log2FC_threshold, ] #UP regulated significant genes
+results_with_adjustment_sig_down_regulated <- results_with_adjustment_significant_adjp[results_with_adjustment_significant_adjp$log2FoldChange < -log2FC_threshold, ] #DOWN regulated significant genes
+
+gene_information <- rowData(sum_exp)
+
+results_with_adjustment_sig_up_regulated$CommonGeneName <- gene_information[rownames(results_with_adjustment_sig_up_regulated), 2] #adds column with common gene names to results_sig_up_regulated
+results_with_adjustment_sig_down_regulated$CommonGeneName <- gene_information[rownames(results_with_adjustment_sig_down_regulated), 2] #adds column with common gene names to results_sig_down_regulated
+
+write.csv(results_with_adjustment_sig_up_regulated, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/results_with_adjustment_sig_up_regulated.csv") #saves results_sig_up_regulated into .csv file
+write.csv(results_with_adjustment_sig_down_regulated, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/results_with_adjustment_sig_down_regulated.csv")#saves results_sig_down_regulated into .csv file
+
