@@ -276,7 +276,7 @@ patient_data$TP53_expression = ifelse(counts["ENSG00000141510", patient_data$bar
 TCGAanalyze_survival( patient_data, "TP53_expression", legend="TP53 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_TP53.pdf")
 TCGAanalyze_survival( patient_data, "TP53_expression", legend="TP53 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_TP53.jpg")
 
-##Violin Plots##
+##Violin Plots - Code Does Not Run##
 counts_transpose <- t(counts)
 
 counts_transpose$barcodes <- rownames(counts_transpose)
@@ -293,7 +293,7 @@ library(ggplot2)
 ggplot(data=patient_data, aes(x=age_category, y=CSN3_counts), fill=age_category) + 
   geom_violin()
 
-##Box Plots##
+##Box Plots - Code Does Not Run##
 
 patient_data$CSN3_counts = counts["ENSG00000171209",]
 
