@@ -222,6 +222,24 @@ patient_data$CHGB_expression = ifelse(counts["ENSG00000089199", patient_data$bar
 TCGAanalyze_survival( patient_data, "CHGB_expression", legend="CHGB Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CHGB.pdf")
 TCGAanalyze_survival( patient_data, "CHGB_expression", legend="CHGB Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CHGB.jpg")
 
+#PRSS2#
+PRSS2_zero_mask <- counts["ENSG00000275896", ] == 0
+PRSS2_zero_count <- sum(PRSS2_zero_mask)
+PRSS2_average <- sum(counts["ENSG00000275896", ])/(ncol(counts)-PRSS2_zero_count)
+patient_data$PRSS2_expression = ifelse(counts["ENSG00000275896", patient_data$barcode] > PRSS2_average, "High", ifelse(counts["ENSG00000275896", patient_data$barcode] == 0, "No Expression", "Low"))
+
+TCGAanalyze_survival( patient_data, "PRSS2_expression", legend="PRSS2 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_PRSS2.pdf")
+TCGAanalyze_survival( patient_data, "PRSS2_expression", legend="PRSS2 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_PRSS2.jpg")
+
+#PRSS2#
+PRSS2_zero_mask <- counts["ENSG00000275896", ] == 0
+PRSS2_zero_count <- sum(PRSS2_zero_mask)
+PRSS2_average <- sum(counts["ENSG00000275896", ])/(ncol(counts)-PRSS2_zero_count)
+patient_data$PRSS2_expression = ifelse(counts["ENSG00000275896", patient_data$barcode] > PRSS2_average, "High", ifelse(counts["ENSG00000275896", patient_data$barcode] == 0, "No Expression", "Low"))
+
+TCGAanalyze_survival( patient_data, "PRSS2_expression", legend="PRSS2 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_PRSS2.pdf")
+TCGAanalyze_survival( patient_data, "PRSS2_expression", legend="PRSS2 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_PRSS2.jpg")
+
 ##Violin Plots##
 counts_transpose <- t(counts)
 
