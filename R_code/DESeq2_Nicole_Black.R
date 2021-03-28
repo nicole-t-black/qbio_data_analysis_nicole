@@ -231,14 +231,50 @@ patient_data$PRSS2_expression = ifelse(counts["ENSG00000275896", patient_data$ba
 TCGAanalyze_survival( patient_data, "PRSS2_expression", legend="PRSS2 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_PRSS2.pdf")
 TCGAanalyze_survival( patient_data, "PRSS2_expression", legend="PRSS2 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_PRSS2.jpg")
 
-#PRSS2#
-PRSS2_zero_mask <- counts["ENSG00000275896", ] == 0
-PRSS2_zero_count <- sum(PRSS2_zero_mask)
-PRSS2_average <- sum(counts["ENSG00000275896", ])/(ncol(counts)-PRSS2_zero_count)
-patient_data$PRSS2_expression = ifelse(counts["ENSG00000275896", patient_data$barcode] > PRSS2_average, "High", ifelse(counts["ENSG00000275896", patient_data$barcode] == 0, "No Expression", "Low"))
+#MAGEA3#
+MAGEA3_zero_mask <- counts["ENSG00000221867", ] == 0
+MAGEA3_zero_count <- sum(MAGEA3_zero_mask)
+MAGEA3_average <- sum(counts["ENSG00000221867", ])/(ncol(counts)-MAGEA3_zero_count)
+patient_data$MAGEA3_expression = ifelse(counts["ENSG00000221867", patient_data$barcode] > MAGEA3_average, "High", ifelse(counts["ENSG00000221867", patient_data$barcode] == 0, "No Expression", "Low"))
 
-TCGAanalyze_survival( patient_data, "PRSS2_expression", legend="PRSS2 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_PRSS2.pdf")
-TCGAanalyze_survival( patient_data, "PRSS2_expression", legend="PRSS2 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_PRSS2.jpg")
+TCGAanalyze_survival( patient_data, "MAGEA3_expression", legend="MAGEA3 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_MAGEA3.pdf")
+TCGAanalyze_survival( patient_data, "MAGEA3_expression", legend="MAGEA3 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_MAGEA3.jpg")
+
+#CYP2A7#
+CYP2A7_zero_mask <- counts["ENSG00000198077", ] == 0
+CYP2A7_zero_count <- sum(CYP2A7_zero_mask)
+CYP2A7_average <- sum(counts["ENSG00000198077", ])/(ncol(counts)-CYP2A7_zero_count)
+patient_data$CYP2A7_expression = ifelse(counts["ENSG00000198077", patient_data$barcode] > CYP2A7_average, "High", ifelse(counts["ENSG00000198077", patient_data$barcode] == 0, "No Expression", "Low"))
+
+TCGAanalyze_survival( patient_data, "CYP2A7_expression", legend="CYP2A7 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CYP2A7.pdf")
+TCGAanalyze_survival( patient_data, "CYP2A7_expression", legend="CYP2A7 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CYP2A7.jpg")
+
+#FDCSP#
+FDCSP_zero_mask <- counts["ENSG00000181617", ] == 0
+FDCSP_zero_count <- sum(FDCSP_zero_mask)
+FDCSP_average <- sum(counts["ENSG00000181617", ])/(ncol(counts)-FDCSP_zero_count)
+patient_data$FDCSP_expression = ifelse(counts["ENSG00000181617", patient_data$barcode] > FDCSP_average, "High", ifelse(counts["ENSG00000181617", patient_data$barcode] == 0, "No Expression", "Low"))
+
+TCGAanalyze_survival( patient_data, "FDCSP_expression", legend="FDCSP Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_FDCSP.pdf")
+TCGAanalyze_survival( patient_data, "FDCSP_expression", legend="FDCSP Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_FDCSP.jpg")
+
+#BRCA1#
+BRCA1_zero_mask <- counts["ENSG00000012048", ] == 0
+BRCA1_zero_count <- sum(BRCA1_zero_mask)
+BRCA1_average <- sum(counts["ENSG00000012048", ])/(ncol(counts)-BRCA1_zero_count)
+patient_data$BRCA1_expression = ifelse(counts["ENSG00000012048", patient_data$barcode] > BRCA1_average, "High", ifelse(counts["ENSG00000012048", patient_data$barcode] == 0, "No Expression", "Low"))
+
+TCGAanalyze_survival( patient_data, "BRCA1_expression", legend="BRCA1 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_BRCA1.pdf")
+TCGAanalyze_survival( patient_data, "BRCA1_expression", legend="BRCA1 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_BRCA1.jpg")
+
+#TP53#
+TP53_zero_mask <- counts["ENSG00000141510", ] == 0
+TP53_zero_count <- sum(TP53_zero_mask)
+TP53_average <- sum(counts["ENSG00000141510", ])/(ncol(counts)-TP53_zero_count)
+patient_data$TP53_expression = ifelse(counts["ENSG00000141510", patient_data$barcode] > TP53_average, "High", ifelse(counts["ENSG00000141510", patient_data$barcode] == 0, "No Expression", "Low"))
+
+TCGAanalyze_survival( patient_data, "TP53_expression", legend="TP53 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_TP53.pdf")
+TCGAanalyze_survival( patient_data, "TP53_expression", legend="TP53 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_TP53.jpg")
 
 ##Violin Plots##
 counts_transpose <- t(counts)
