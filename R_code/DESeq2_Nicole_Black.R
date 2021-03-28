@@ -28,18 +28,12 @@ patients_no_NA_mask <- !is.na(colData(sum_exp)$paper_age_at_initial_pathologic_d
 #access the patient_data from coldata
 patient_data <- colData(sum_exp)[ patients_no_NA_mask, ] #creates patient_data data frame with the sum_exp data only for TRUE age patients
 
-#patient_data_sample <- head(patient_data)
-#write.csv(patient_data_sample, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/patient_data_sample.csv")
-
 ##### Preprocess your data #####
 #How many genes are in counts? 56,602 genes
 
 counts <- counts[rowMeans(counts) >= 10, ] #rewrites counts with counts data for genes where mean >= 10 is TRUE
 
 counts <- counts[ , patients_no_NA_mask] #rewrites counts with only patients where age (patients_no_NA_mask) is TRUE
-
-#counts_sample <- counts[1:20, ]
-#write.csv(counts_sample, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/counts_sample.csv")
 
 #We need to add an age_category column to our patient data
 patient_data$age_category = ifelse(patient_data$paper_age_at_initial_pathologic_diagnosis < 40, "Young", 
@@ -118,79 +112,6 @@ results_sig_down_regulated$CommonGeneName <- gene_information[rownames(results_s
 write.csv(results_sig_up_regulated, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/results_sig_up_regulated.csv") #saves results_sig_up_regulated into .csv file
 write.csv(results_sig_down_regulated, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/results_sig_down_regulated.csv")#saves results_sig_down_regulated into .csv file
 
-##################################################################
-#As we have touched on, there are many other variables that may influence the results between young and old
-#You may want to ADJUST for this confounding variables like PAM50 subtype, and what is called "Histology"
-#Breast cancer subtypes and histology (ductal vs. lobular, feel free to Google!), affect the patient's "omics" data.
-#Repeat the above analysis, but add the below modifications.
-#Compare your results with adjustment and without adjustment.
-#Are there greater or fewer genes significant with the adjustment?
-#Are the genes that are signficant the same?
-
-#check that all variables are not "NA"
-patients_no_NA_mask <- ( !is.na(colData(sum_exp)$paper_age_at_initial_pathologic_diagnosis)
-                        & !is.na(colData(sum_exp)$paper_BRCA_Subtype_PAM50)
-                        & !is.na(colData(sum_exp)$paper_BRCA_Pathology)
-                        & !colData(sum_exp)$paper_BRCA_Pathology == "NA" )
-
-patient_data <- colData(sum_exp)[ patients_no_NA_mask, ] #recreates patient_data data frame with the sum_exp data only for TRUE age, BRCA pathology, and BRCA subtypes
-
-counts <- assays(sum_exp)$"HTSeq - Counts" #manually remove existing counts in console, then use this to recreate full counts array (?) with number of counts for each gene
-
-counts <- counts[rowMeans(counts) >= 10, ] #rewrites counts with counts data for genes where mean >= 10 is TRUE
-counts <- counts[ , patients_no_NA_mask ] #rewrites counts to remove all NA patients (NA for age, BRCA subtype, BRCA pathology)
-
-patient_data$age_category = ifelse(patient_data$paper_age_at_initial_pathologic_diagnosis < 40, "Young", 
-                                   ifelse(patient_data$paper_age_at_initial_pathologic_diagnosis >= 60, "Old", "Mid")) #adds age_category column, categorized by young, mid, old
-
-#all columns must be FACTORS
-patient_data$age_category <- factor( patient_data$age_category, levels=c("Young", "Mid", "Old") )
-patient_data$paper_BRCA_Subtype_PAM50 <- factor( patient_data$paper_BRCA_Subtype_PAM50, levels=c("Her2","LumA","LumB","Basal","Normal") )
-patient_data$paper_BRCA_Pathology <- factor( patient_data$paper_BRCA_Pathology, levels=c("IDC","Other","Mixed","ILC") )
-
-####### Now for actual analysis part 2!! #######
-dds_with_adjustment <- DESeqDataSetFromMatrix(countData = counts, colData = patient_data, design = ~paper_BRCA_Pathology+ paper_BRCA_Subtype_PAM50 +age_category) #creates a DESeqDataSet object from the counts and patient_data matrices, using BRCA_pathology, BRCA_subtype, and age_category as the conditions
-dds_obj_with_adjustment <- DESeq(dds_with_adjustment) #runs DESeq on the DESeqDataSet object, returning results tables with log^2 fold, padj, etc. values
-resultsNames(dds_obj_with_adjustment) #lists the coefficients, "intercept", "age_category_Mid_vs_Young", "age_category_Old_vs_Young" (why no Mid vs Old?)
-
-results_with_adjustment <- results(dds_obj_with_adjustment, contrast=c("age_category", "Young",'Old')) #extracts analysis table with log^2 fold changes, standard errors, test stats, p-vales, and adjusted p-values
-#contrast=c specifies the comparison for the fold change, with age_category as the name of the factor, "Young" as the numerator, and "Old" as the denominator"
-
-head(results_with_adjustment) #look at the results
-
-#Notice, each gene has a log2FoldChange and a padj value. This is what we are interested in!
-#For clarification, please add a FoldChange column by computing 2^log2FoldChange column
-results_with_adjustment$FoldChange <- 2^results_with_adjustment$log2FoldChange #creates column in results with FoldChange
-
-#Save ALL your results to a csv file
-write.csv(results_with_adjustment, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/DESeq_Data_with_Adjustment.csv")
-
-####### Interpreting results ########
-
-#We often visualize results via a "volcano plot"
-padj_threshold <- 0.05 #significance threshold
-log2FC_threshold <- 1.0 #differential expression threshold
-jpeg("/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/DESeq_Volcano_Plot_with_Adjustment.jpg")
-plot(x= results_with_adjustment$log2FoldChange, y= -log10(results_with_adjustment$padj) ) #plots significance (-log10(padj)) vs expression (log2FoldChange)
-#abline() plots straight lines on an R plot.
-#v argument is for a vertical line, h argument is for a horizontal line. col argument is color
-abline(v=c(log2FC_threshold, -log2FC_threshold), h= c(-log10(padj_threshold)), col="green") #plots vertical lines at +/- 1 expression and horizontal at significance cutoff of 0.05
-dev.off()
-
-#stuck because it says there's an NA??? but I can't find it :(
-results_with_adjustment_significant_adjp <- results_with_adjustment[results_with_adjustment$padj > padj_threshold, ] #filters for only significant (padj > 0.05) genes, creates table
-
-results_with_adjustment_sig_up_regulated <- results_with_adjustment_significant_adjp[results_with_adjustment_significant_adjp$log2FoldChange > log2FC_threshold, ] #UP regulated significant genes
-results_with_adjustment_sig_down_regulated <- results_with_adjustment_significant_adjp[results_with_adjustment_significant_adjp$log2FoldChange < -log2FC_threshold, ] #DOWN regulated significant genes
-
-gene_information <- rowData(sum_exp)
-
-results_with_adjustment_sig_up_regulated$CommonGeneName <- gene_information[rownames(results_with_adjustment_sig_up_regulated), 2] #adds column with common gene names to results_sig_up_regulated
-results_with_adjustment_sig_down_regulated$CommonGeneName <- gene_information[rownames(results_with_adjustment_sig_down_regulated), 2] #adds column with common gene names to results_sig_down_regulated
-
-write.csv(results_with_adjustment_sig_up_regulated, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/results_with_adjustment_sig_up_regulated.csv") #saves results_sig_up_regulated into .csv file
-write.csv(results_with_adjustment_sig_down_regulated, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/results_with_adjustment_sig_down_regulated.csv")#saves results_sig_down_regulated into .csv file
-
 ###Kaplan-Meier Plots##
 
 #CSN3#
@@ -201,12 +122,15 @@ high_bound_gene_CSN3 <- gene_counts_CSN3[length_gene_CSN3/3] #counts of gene at 
 mid_bound_gene_CSN3 <- gene_counts_CSN3[length_gene_CSN3-length_gene_CSN3/3] #counts of gene at border of mid and low
 patient_data$gene_level_CSN3 <- ifelse(counts["ENSG00000171209",]>=high_bound_gene_CSN3 ,"High", ifelse(counts["ENSG00000171209",] < mid_bound_gene_CSN3, "Low", "Mid"))
 
-TCGAanalyze_survival( patient_data, "gene_level_CSN3", filename="survival_expression_of_CSN3_Thirds.pdf")
+TCGAanalyze_survival( patient_data, "gene_level_CSN3", legend="CSN3 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN3_Thirds.pdf")
 
-CSN3_average <- sum(counts["ENSG00000171209", ])/ncol(counts)
-patient_data$CSN3_expression = ifelse(counts["ENSG00000171209", patient_data$barcode] < CSN3_average, "Low", "High") #adds age_category column, categorized by young, mid, old
+CSN3_zero_mask <- counts["ENSG00000171209", ] == 0
+CSN3_zero_count <- sum(CSN3_zero_mask)
+CSN3_average <- sum(counts["ENSG00000171209", ])/(ncol(counts)-CSN3_zero_count)
+patient_data$CSN3_expression = ifelse(counts["ENSG00000171209", patient_data$barcode] > CSN3_average, "High", ifelse(counts["ENSG00000171209", patient_data$barcode] == 0, "No Expression", "Low"))
 
-TCGAanalyze_survival( patient_data, "CSN3_expression", filename="survival_expression_of_CSN3.pdf")
+TCGAanalyze_survival( patient_data, "CSN3_expression", legend="CSN3 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN3.pdf")
+TCGAanalyze_survival( patient_data, "CSN3_expression", legend="CSN3 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN3.jpg")
 
 #CSN2#
 gene_counts_CSN2 <- counts["ENSG00000135222",]
@@ -216,12 +140,15 @@ high_bound_gene_CSN2 <- gene_counts_CSN2[length_gene_CSN2/3] #counts of gene at 
 mid_bound_gene_CSN2 <- gene_counts_CSN2[length_gene_CSN2-length_gene_CSN2/3] #counts of gene at border of mid and low
 patient_data$gene_level_CSN2 <- ifelse(counts["ENSG00000135222",]>=high_bound_gene_CSN3 ,"High", ifelse(counts["ENSG00000135222",] < mid_bound_gene_CSN2, "Low", "Mid"))
 
-TCGAanalyze_survival( patient_data, "gene_level_CSN2", filename="survival_expression_of_CSN2_Thirds.pdf")
+TCGAanalyze_survival( patient_data, "gene_level_CSN2", legend="CSN2 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN2_Thirds.pdf")
 
-CSN2_average <- sum(counts["ENSG00000135222", ])/ncol(counts)
-patient_data$CSN2_expression = ifelse(counts["ENSG00000135222", patient_data$barcode] < CSN2_average, "Low", "High") #adds age_category column, categorized by young, mid, old
+CSN2_zero_mask <- counts["ENSG00000135222", ] == 0
+CSN2_zero_count <- sum(CSN2_zero_mask)
+CSN2_average <- sum(counts["ENSG00000135222", ])/(ncol(counts)-CSN2_zero_count)
+patient_data$CSN2_expression = ifelse(counts["ENSG00000135222", patient_data$barcode] > CSN2_average, "High", ifelse(counts["ENSG00000135222", patient_data$barcode] == 0, "No Expression", "Low"))
 
-TCGAanalyze_survival( patient_data, "CSN2_expression", filename="survival_expression_of_CSN2.pdf")
+TCGAanalyze_survival( patient_data, "CSN2_expression", legend="CSN2 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN2.pdf")
+TCGAanalyze_survival( patient_data, "CSN2_expression", legend="CSN2 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN2.jpg")
 
 #CSN1S1#
 gene_counts_CSN1S1 <- counts["ENSG00000126545",]
@@ -231,12 +158,15 @@ high_bound_gene_CSN1S1 <- gene_counts_CSN1S1[length_gene_CSN1S1/3] #counts of ge
 mid_bound_gene_CSN1S1 <- gene_counts_CSN1S1[length_gene_CSN1S1-length_gene_CSN1S1/3] #counts of gene at border of mid and low
 patient_data$gene_level_CSN1S1 <- ifelse(counts["ENSG00000126545",]>=high_bound_gene_CSN1S1 ,"High", ifelse(counts["ENSG00000126545",] < mid_bound_gene_CSN1S1, "Low", "Mid"))
 
-TCGAanalyze_survival( patient_data, "gene_level_CSN1S1", filename="survival_expression_of_CSN1S1_Thirds.pdf")
+TCGAanalyze_survival( patient_data, "gene_level_CSN1S1", legend="CSN1S1 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN1S1_Thirds.pdf")
 
-CSN1S1_average <- sum(counts["ENSG00000126545", ])/ncol(counts)
-patient_data$CSN1S1_expression = ifelse(counts["ENSG00000126545", patient_data$barcode] < CSN1S1_average, "Low", "High") #adds age_category column, categorized by young, mid, old
+CSN1S1_zero_mask <- counts["ENSG00000126545", ] == 0
+CSN1S1_zero_count <- sum(CSN1S1_zero_mask)
+CSN1S1_average <- sum(counts["ENSG00000126545", ])/(ncol(counts)-CSN1S1_zero_count)
+patient_data$CSN1S1_expression = ifelse(counts["ENSG00000126545", patient_data$barcode] > CSN1S1_average, "High", ifelse(counts["ENSG00000126545", patient_data$barcode] == 0, "No Expression", "Low"))
 
-TCGAanalyze_survival( patient_data, "CSN1S1_expression", filename="survival_expression_of_CSN1S1.pdf")
+TCGAanalyze_survival( patient_data, "CSN1S1_expression", legend="CSN1S1 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN1S1.pdf")
+TCGAanalyze_survival( patient_data, "CSN1S1_expression", legend="CSN1S1 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN1S1.jpg")
 
 #CARTPT#
 gene_counts_CARTPT <- counts["ENSG00000164326",]
@@ -246,12 +176,15 @@ high_bound_gene_CARTPT <- gene_counts_CARTPT[length_gene_CARTPT/3] #counts of ge
 mid_bound_gene_CARTPT <- gene_counts_CARTPT[length_gene_CARTPT-length_gene_CARTPT/3] #counts of gene at border of mid and low
 patient_data$gene_level_CARTPT <- ifelse(counts["ENSG00000164326",]>=high_bound_gene_CARTPT ,"High", ifelse(counts["ENSG00000164326",] < mid_bound_gene_CARTPT, "Low", "Mid"))
 
-TCGAanalyze_survival( patient_data, "gene_level_CARTPT", filename="survival_expression_of_CARTPT_Thirds.pdf")
+TCGAanalyze_survival( patient_data, "gene_level_CARTPT", legend="CARTPT Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CARTPT_Thirds.pdf")
 
-CARTPT_average <- sum(counts["ENSG00000164326", ])/ncol(counts)
-patient_data$CARTPT_expression = ifelse(counts["ENSG00000164326", patient_data$barcode] < CARTPT_average, "Low", "High") #adds age_category column, categorized by young, mid, old
+CARTPT_zero_mask <- counts["ENSG00000164326", ] == 0
+CARTPT_zero_count <- sum(CARTPT_zero_mask)
+CARTPT_average <- sum(counts["ENSG00000164326", ])/(ncol(counts)-CARTPT_zero_count)
+patient_data$CARTPT_expression = ifelse(counts["ENSG00000164326", patient_data$barcode] > CARTPT_average, "High", ifelse(counts["ENSG00000164326", patient_data$barcode] == 0, "No Expression", "Low"))
 
-TCGAanalyze_survival( patient_data, "CARTPT_expression", filename="survival_expression_of_CARTPT.pdf")
+TCGAanalyze_survival( patient_data, "CARTPT_expression", legend="CARTPT Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CARTPT.pdf")
+TCGAanalyze_survival( patient_data, "CARTPT_expression", legend="CARTPT Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CARTPT.jpg")
 
 #LACRT#
 gene_counts_LACRT <- counts["ENSG00000135413",]
@@ -261,12 +194,33 @@ high_bound_gene_LACRT <- gene_counts_LACRT[length_gene_LACRT/3] #counts of gene 
 mid_bound_gene_LACRT <- gene_counts_LACRT[length_gene_LACRT-length_gene_LACRT/3] #counts of gene at border of mid and low
 patient_data$gene_level_LACRT <- ifelse(counts["ENSG00000135413",]>=high_bound_gene_LACRT ,"High", ifelse(counts["ENSG00000135413",] < mid_bound_gene_LACRT, "Low", "Mid"))
 
-TCGAanalyze_survival( patient_data, "gene_level_LACRT", filename="survival_expression_of_LACRT_Thirds.pdf")
+TCGAanalyze_survival( patient_data, "gene_level_LACRT", legend="LACRT Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_LACRT_Thirds.pdf")
 
-LACRT_average <- sum(counts["ENSG00000135413", ])/ncol(counts)
-patient_data$LACRT_expression = ifelse(counts["ENSG00000135413", patient_data$barcode] < LACRT_average, "Low", "High") #adds age_category column, categorized by young, mid, old
+LACRT_zero_mask <- counts["ENSG00000135413", ] == 0
+LACRT_zero_count <- sum(LACRT_zero_mask)
+LACRT_average <- sum(counts["ENSG00000135413", ])/(ncol(counts)-LACRT_zero_count)
+patient_data$LACRT_expression = ifelse(counts["ENSG00000135413", patient_data$barcode] > LACRT_average, "High", ifelse(counts["ENSG00000135413", patient_data$barcode] == 0, "No Expression", "Low"))
 
-TCGAanalyze_survival( patient_data, "LACRT_expression", filename="survival_expression_of_LACRT.pdf")
+TCGAanalyze_survival( patient_data, "LACRT_expression", legend="LACRT Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_LACRT.pdf")
+TCGAanalyze_survival( patient_data, "LACRT_expression", legend="LACRT Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_LACRT.jpg")
+
+#CHGB#
+gene_counts_CHGB <- counts["ENSG00000089199",]
+gene_counts_CHGB <- sort(gene_counts_CHGB, decreasing = TRUE, na.last = NA)
+length_gene_CHGB <- length(gene_counts_CHGB)
+high_bound_gene_CHGB <- gene_counts_CHGB[length_gene_CHGB/3] #counts of gene at border of high and mid
+mid_bound_gene_CHGB <- gene_counts_CHGB[length_gene_CHGB-length_gene_CHGB/3] #counts of gene at border of mid and low
+patient_data$gene_level_CHGB <- ifelse(counts["ENSG00000089199",]>=high_bound_gene_CHGB ,"High", ifelse(counts["ENSG00000089199",] < mid_bound_gene_CHGB, "Low", "Mid"))
+
+TCGAanalyze_survival( patient_data, "gene_level_CHGB", legend="CHGB Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CHGB_Thirds.pdf")
+
+CHGB_zero_mask <- counts["ENSG00000089199", ] == 0
+CHGB_zero_count <- sum(CHGB_zero_mask)
+CHGB_average <- sum(counts["ENSG00000089199", ])/(ncol(counts)-CHGB_zero_count)
+patient_data$CHGB_expression = ifelse(counts["ENSG00000089199", patient_data$barcode] > CHGB_average, "High", ifelse(counts["ENSG00000089199", patient_data$barcode] == 0, "No Expression", "Low"))
+
+TCGAanalyze_survival( patient_data, "CHGB_expression", legend="CHGB Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CHGB.pdf")
+TCGAanalyze_survival( patient_data, "CHGB_expression", legend="CHGB Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CHGB.jpg")
 
 ##Violin Plots##
 counts_transpose <- t(counts)
