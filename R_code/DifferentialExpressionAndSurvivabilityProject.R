@@ -115,14 +115,15 @@ write.csv(results_sig_down_regulated, "/Users/nicoleblack/Desktop/d/qbio_data_an
 ###Kaplan-Meier Plots##
 
 #CSN3#
-gene_counts_CSN3 <- counts["ENSG00000171209",]
-gene_counts_CSN3 <- sort(gene_counts_CSN3, decreasing = TRUE, na.last = NA)
-length_gene_CSN3 <- length(gene_counts_CSN3)
-high_bound_gene_CSN3 <- gene_counts_CSN3[length_gene_CSN3/3] #counts of gene at border of high and mid
-mid_bound_gene_CSN3 <- gene_counts_CSN3[length_gene_CSN3-length_gene_CSN3/3] #counts of gene at border of mid and low
-patient_data$gene_level_CSN3 <- ifelse(counts["ENSG00000171209",]>=high_bound_gene_CSN3 ,"High", ifelse(counts["ENSG00000171209",] < mid_bound_gene_CSN3, "Low", "Mid"))
 
-TCGAanalyze_survival( patient_data, "gene_level_CSN3", legend="CSN3 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN3_Thirds.pdf")
+#gene_counts_CSN3 <- counts["ENSG00000171209",]
+#gene_counts_CSN3 <- sort(gene_counts_CSN3, decreasing = TRUE, na.last = NA)
+#length_gene_CSN3 <- length(gene_counts_CSN3)
+#high_bound_gene_CSN3 <- gene_counts_CSN3[length_gene_CSN3/3] #counts of gene at border of high and mid
+#mid_bound_gene_CSN3 <- gene_counts_CSN3[length_gene_CSN3-length_gene_CSN3/3] #counts of gene at border of mid and low
+#patient_data$gene_level_CSN3 <- ifelse(counts["ENSG00000171209",]>=high_bound_gene_CSN3 ,"High", ifelse(counts["ENSG00000171209",] < mid_bound_gene_CSN3, "Low", "Mid"))
+
+#TCGAanalyze_survival( patient_data, "gene_level_CSN3", legend="CSN3 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN3_Thirds.pdf")
 
 CSN3_zero_mask <- counts["ENSG00000171209", ] == 0
 CSN3_zero_count <- sum(CSN3_zero_mask)
@@ -133,15 +134,6 @@ TCGAanalyze_survival( patient_data, "CSN3_expression", legend="CSN3 Expression L
 TCGAanalyze_survival( patient_data, "CSN3_expression", legend="CSN3 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN3.jpg")
 
 #CSN2#
-gene_counts_CSN2 <- counts["ENSG00000135222",]
-gene_counts_CSN2 <- sort(gene_counts_CSN2, decreasing = TRUE, na.last = NA)
-length_gene_CSN2 <- length(gene_counts_CSN2)
-high_bound_gene_CSN2 <- gene_counts_CSN2[length_gene_CSN2/3] #counts of gene at border of high and mid
-mid_bound_gene_CSN2 <- gene_counts_CSN2[length_gene_CSN2-length_gene_CSN2/3] #counts of gene at border of mid and low
-patient_data$gene_level_CSN2 <- ifelse(counts["ENSG00000135222",]>=high_bound_gene_CSN3 ,"High", ifelse(counts["ENSG00000135222",] < mid_bound_gene_CSN2, "Low", "Mid"))
-
-TCGAanalyze_survival( patient_data, "gene_level_CSN2", legend="CSN2 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN2_Thirds.pdf")
-
 CSN2_zero_mask <- counts["ENSG00000135222", ] == 0
 CSN2_zero_count <- sum(CSN2_zero_mask)
 CSN2_average <- sum(counts["ENSG00000135222", ])/(ncol(counts)-CSN2_zero_count)
@@ -151,15 +143,6 @@ TCGAanalyze_survival( patient_data, "CSN2_expression", legend="CSN2 Expression L
 TCGAanalyze_survival( patient_data, "CSN2_expression", legend="CSN2 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN2.jpg")
 
 #CSN1S1#
-gene_counts_CSN1S1 <- counts["ENSG00000126545",]
-gene_counts_CSN1S1 <- sort(gene_counts_CSN1S1, decreasing = TRUE, na.last = NA)
-length_gene_CSN1S1 <- length(gene_counts_CSN1S1)
-high_bound_gene_CSN1S1 <- gene_counts_CSN1S1[length_gene_CSN1S1/3] #counts of gene at border of high and mid
-mid_bound_gene_CSN1S1 <- gene_counts_CSN1S1[length_gene_CSN1S1-length_gene_CSN1S1/3] #counts of gene at border of mid and low
-patient_data$gene_level_CSN1S1 <- ifelse(counts["ENSG00000126545",]>=high_bound_gene_CSN1S1 ,"High", ifelse(counts["ENSG00000126545",] < mid_bound_gene_CSN1S1, "Low", "Mid"))
-
-TCGAanalyze_survival( patient_data, "gene_level_CSN1S1", legend="CSN1S1 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN1S1_Thirds.pdf")
-
 CSN1S1_zero_mask <- counts["ENSG00000126545", ] == 0
 CSN1S1_zero_count <- sum(CSN1S1_zero_mask)
 CSN1S1_average <- sum(counts["ENSG00000126545", ])/(ncol(counts)-CSN1S1_zero_count)
@@ -169,15 +152,6 @@ TCGAanalyze_survival( patient_data, "CSN1S1_expression", legend="CSN1S1 Expressi
 TCGAanalyze_survival( patient_data, "CSN1S1_expression", legend="CSN1S1 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN1S1.jpg")
 
 #CARTPT#
-gene_counts_CARTPT <- counts["ENSG00000164326",]
-gene_counts_CARTPT <- sort(gene_counts_CARTPT, decreasing = TRUE, na.last = NA)
-length_gene_CARTPT <- length(gene_counts_CARTPT)
-high_bound_gene_CARTPT <- gene_counts_CARTPT[length_gene_CARTPT/3] #counts of gene at border of high and mid
-mid_bound_gene_CARTPT <- gene_counts_CARTPT[length_gene_CARTPT-length_gene_CARTPT/3] #counts of gene at border of mid and low
-patient_data$gene_level_CARTPT <- ifelse(counts["ENSG00000164326",]>=high_bound_gene_CARTPT ,"High", ifelse(counts["ENSG00000164326",] < mid_bound_gene_CARTPT, "Low", "Mid"))
-
-TCGAanalyze_survival( patient_data, "gene_level_CARTPT", legend="CARTPT Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CARTPT_Thirds.pdf")
-
 CARTPT_zero_mask <- counts["ENSG00000164326", ] == 0
 CARTPT_zero_count <- sum(CARTPT_zero_mask)
 CARTPT_average <- sum(counts["ENSG00000164326", ])/(ncol(counts)-CARTPT_zero_count)
@@ -187,15 +161,6 @@ TCGAanalyze_survival( patient_data, "CARTPT_expression", legend="CARTPT Expressi
 TCGAanalyze_survival( patient_data, "CARTPT_expression", legend="CARTPT Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CARTPT.jpg")
 
 #LACRT#
-gene_counts_LACRT <- counts["ENSG00000135413",]
-gene_counts_LACRT <- sort(gene_counts_LACRT, decreasing = TRUE, na.last = NA)
-length_gene_LACRT <- length(gene_counts_LACRT)
-high_bound_gene_LACRT <- gene_counts_LACRT[length_gene_LACRT/3] #counts of gene at border of high and mid
-mid_bound_gene_LACRT <- gene_counts_LACRT[length_gene_LACRT-length_gene_LACRT/3] #counts of gene at border of mid and low
-patient_data$gene_level_LACRT <- ifelse(counts["ENSG00000135413",]>=high_bound_gene_LACRT ,"High", ifelse(counts["ENSG00000135413",] < mid_bound_gene_LACRT, "Low", "Mid"))
-
-TCGAanalyze_survival( patient_data, "gene_level_LACRT", legend="LACRT Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_LACRT_Thirds.pdf")
-
 LACRT_zero_mask <- counts["ENSG00000135413", ] == 0
 LACRT_zero_count <- sum(LACRT_zero_mask)
 LACRT_average <- sum(counts["ENSG00000135413", ])/(ncol(counts)-LACRT_zero_count)
@@ -205,15 +170,6 @@ TCGAanalyze_survival( patient_data, "LACRT_expression", legend="LACRT Expression
 TCGAanalyze_survival( patient_data, "LACRT_expression", legend="LACRT Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_LACRT.jpg")
 
 #CHGB#
-gene_counts_CHGB <- counts["ENSG00000089199",]
-gene_counts_CHGB <- sort(gene_counts_CHGB, decreasing = TRUE, na.last = NA)
-length_gene_CHGB <- length(gene_counts_CHGB)
-high_bound_gene_CHGB <- gene_counts_CHGB[length_gene_CHGB/3] #counts of gene at border of high and mid
-mid_bound_gene_CHGB <- gene_counts_CHGB[length_gene_CHGB-length_gene_CHGB/3] #counts of gene at border of mid and low
-patient_data$gene_level_CHGB <- ifelse(counts["ENSG00000089199",]>=high_bound_gene_CHGB ,"High", ifelse(counts["ENSG00000089199",] < mid_bound_gene_CHGB, "Low", "Mid"))
-
-TCGAanalyze_survival( patient_data, "gene_level_CHGB", legend="CHGB Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CHGB_Thirds.pdf")
-
 CHGB_zero_mask <- counts["ENSG00000089199", ] == 0
 CHGB_zero_count <- sum(CHGB_zero_mask)
 CHGB_average <- sum(counts["ENSG00000089199", ])/(ncol(counts)-CHGB_zero_count)
