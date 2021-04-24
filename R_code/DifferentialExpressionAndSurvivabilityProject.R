@@ -1,16 +1,13 @@
 if (!require(DESeq2)) BiocManager::install("DESeq2")
-
+install.packages('matrixStats')
+library(matrixStats)
 library(TCGAbiolinks)
 library(DESeq2)
 
 # REFERENCE: https://www.bioconductor.org/packages/release/bioc/vignettes/DESeq2/inst/doc/DESeq2.html
 
-# If testing on the 6 patients, get the patient barcodes
-# clinical_file <- read.csv("../data/tcga_brca_six_example_clinical.csv")
-# barcodes <- as.character( clinical_file$barcode )
+### Load in HTSeq Counts ###
 
-###### Load in your HTSeq Counts #######
-#Option A: Use GDCquery #see below, loaded HTSeq Counts into sum_exp
  library(SummarizedExperiment)
  query <- GDCquery(project = "TCGA-BRCA",
                    data.category = "Transcriptome Profiling",
@@ -28,91 +25,109 @@ patients_no_NA_mask <- !is.na(colData(sum_exp)$paper_age_at_initial_pathologic_d
 #access the patient_data from coldata
 patient_data <- colData(sum_exp)[ patients_no_NA_mask, ] #creates patient_data data frame with the sum_exp data only for TRUE age patients
 
-##### Preprocess your data #####
-#How many genes are in counts? 56,602 genes
+#### Pre-processing ####
 
-counts <- counts[rowMeans(counts) >= 10, ] #rewrites counts with counts data for genes where mean >= 10 is TRUE
+counts <- counts[rowMeans(counts) >= 10, patients_no_NA_mask] #rewrites counts with counts data for genes where mean >= 10 is TRUE and age (patients_no_NA_mask) is TRUE
 
-counts <- counts[ , patients_no_NA_mask] #rewrites counts with only patients where age (patients_no_NA_mask) is TRUE
+patient_age <- patient_data[ ,"paper_age_at_initial_pathologic_diagnosis"]
+median_age <- median(patient_age)
 
-#We need to add an age_category column to our patient data
 patient_data$age_category = ifelse(patient_data$paper_age_at_initial_pathologic_diagnosis < 40, "Young", 
                              ifelse(patient_data$paper_age_at_initial_pathologic_diagnosis >= 60, "Old", "Mid")) #adds age_category column, categorized by young, mid, old
 
-#Next, we need to make age_category a "factor".
+patient_data$age_category_median = ifelse(patient_data$paper_age_at_initial_pathologic_diagnosis < median_age, "Young", "Old") #adds age_category column separated by the median age
+
 patient_data$age_category <- factor(patient_data$age_category, levels=c("Young", "Mid", "Old")) #same column (age_category) but now a categorical variable, with levels Young Mid Old
 
-####### Now for actual analysis!! #######
-dds <- DESeqDataSetFromMatrix(countData = counts, colData = patient_data, design = ~age_category) #creates a DESeqDataSet object from the counts and patient_data matrices, using age_category as the condition
-dds_obj <- DESeq(dds) #runs DESeq on the DESeqDataSet object, returning results tables with log^2 fold, padj, etc. values
-resultsNames(dds_obj) #lists the coefficients, "intercept", "age_category_Mid_vs_Young", "age_category_Old_vs_Young" (why no Mid vs Old?)
+patient_data$age_category_median <- factor(patient_data$age_category_median, levels=c("Young", "Old")) #same column (age_category) but now a categorical variable, with levels Young Old
 
-results <- results(dds_obj, contrast=c("age_category", "Young",'Old')) #extracts analysis table with log^2 fold changes, standard errors, test stats, p-vales, and adjusted p-values
+###DESeq2 with young/old (ignoring mid)###
+
+dds1 <- DESeqDataSetFromMatrix(countData = counts, colData = patient_data, design = ~age_category) #creates a DESeqDataSet object from the counts and patient_data matrices, using age_category as the condition
+dds1_obj <- DESeq(dds1) #runs DESeq on the DESeqDataSet object, returning results tables with log^2 fold, padj, etc. values
+resultsNames(dds1_obj) #lists the coefficients, "intercept", "age_category_Mid_vs_Young", "age_category_Old_vs_Young" (why no Mid vs Old?)
+
+results1 <- results(dds1_obj, contrast=c("age_category", "Young",'Old')) #extracts analysis table with log^2 fold changes, standard errors, test stats, p-vales, and adjusted p-values
   #contrast=c specifies the comparison for the fold change, with age_category as the name of the factor, "Young" as the numerator, and "Old" as the denominator"
 
-head(results) #look at the results
+head(results1) #view results
 
-#Notice, each gene has a log2FoldChange and a padj value. This is what we are interested in!
-#For clarification, please add a FoldChange column by computing 2^log2FoldChange column
-results$FoldChange <- 2^results$log2FoldChange #creates column in results with FoldChange
+results1$FoldChange <- 2^results1$log2FoldChange #creates column in results with FoldChange
 
-#Save ALL your results to a csv file
-write.csv(results, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/DESeq_Data.csv")
+write.csv(results1, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/DESeq_Data_1.csv")
 
-####### Interpreting results ########
+##Volcano plot with young/old (ignoring mid)##
 
-#We often visualize results via a "volcano plot"
 padj_threshold <- 0.05 #significance threshold
 log2FC_threshold <- 1.0 #differential expression threshold
-jpeg("/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/DESeq_Volcano_Plot.jpg")
-plot(x= results$log2FoldChange, y= -log10(results$padj) ) #plots significance (-log10(padj)) vs expression (log2FoldChange)
+jpeg("/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/DESeq_Volcano_Plot_1.jpg")
+plot(x= results1$log2FoldChange, y= -log10(results1$padj), main= "Differentially Expressed Genes between Young and Old Patients", xlab= "log2(Fold Change)", ylab="-log10(p-adjusted value)") #plots significance (-log10(padj)) vs expression (log2FoldChange)
 #abline() plots straight lines on an R plot.
 #v argument is for a vertical line, h argument is for a horizontal line. col argument is color
 abline(v=c(log2FC_threshold, -log2FC_threshold), h= c(-log10(padj_threshold)), col="green") #plots vertical lines at +/- 1 expression and horizontal at significance cutoff of 0.05
 dev.off()
 
-######## Look at your volcano plot and answer the following questions ########
+##Tables of Up/Down Regulated Genes with young/old (ignoring mid)##
 
-#What does each dot on the plot represent?
-      #One gene, it's expression
-#Why might we have two vertical line and only one horizontal line?
-      #Vertical lines represent cutoffs for UP or DOWN expression, horizontal is for significance)
-#Why are we plotting the -log10 of the adjusted p values rather than the actual adjusted p values?
+results_significant_padj_1 <- results1[results1$padj < padj_threshold, ] #filters for only significant (padj < 0.05) genes, creates table
 
-#padj not -log10 plot
-padj_threshold <- 0.05 #significance threshold
-log2FC_threshold <- 1.0 #differential expression threshold
-jpeg("/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/DESeq_Volcano_Plot_Padj_Test.jpg")
-plot(x= results$log2FoldChange, y= results$padj ) #plots significance (padj) vs expression (log2FoldChange)
-abline(v=c(log2FC_threshold, -log2FC_threshold), h= c(padj_threshold), col="green") #plots vertical lines at +/- 1 expression and horizontal at significance cutoff of 0.05
-dev.off()
+results_sig_up_regulated_1 <- results_significant_padj_1[results_significant_padj_1$log2FoldChange > log2FC_threshold, ] #UP regulated significant genes
+results_sig_down_regulated_1 <- results_significant_padj_1[results_significant_padj_1$log2FoldChange < -log2FC_threshold, ] #DOWN regulated significant genes
 
-#We want to separate between genes that are UP regulated in young (higher expression in young patients),
-#                                         and genes that are DOWN regulated in young (lower expression in young patients)
-#If the log2FoldChange is POSITIVE, the expression is higher in young
-#If the log2FoldChange is NEGATIVE, the expression is lower in young and higher in old
-#What does the log2FoldChange equal, if the expression is the same in young and old patients?
-      #Log2FoldChange = 0, or near to 0
 
-results_significant_padj <- results[results$padj < padj_threshold, ] #filters for only significant (padj < 0.05) genes, creates table
-
-results_sig_up_regulated <- results_significant_padj[results_significant_padj$log2FoldChange > log2FC_threshold, ] #UP regulated significant genes
-results_sig_down_regulated <- results_significant_padj[results_significant_padj$log2FoldChange < -log2FC_threshold, ] #DOWN regulated significant genes
-
-#How could you get the same results using the absolute value of the log2FoldChange?
-      #Not sure, I get that you can easily get the UP regulated, but not down...?
-
-#Notice that the gene names are in the ENSG00000#### format. This is the ensembl_gene_id format.
-#we probably want the "common" name of the gene.
 gene_information <- rowData(sum_exp)
 
-results_sig_up_regulated$CommonGeneName <- gene_information[rownames(results_sig_up_regulated), 2] #adds column with common gene names to results_sig_up_regulated
-results_sig_down_regulated$CommonGeneName <- gene_information[rownames(results_sig_down_regulated), 2] #adds column with common gene names to results_sig_down_regulated
+results_sig_up_regulated_1$CommonGeneName <- gene_information[rownames(results_sig_up_regulated_1), 2] #adds column with common gene names to results_sig_up_regulated
+results_sig_down_regulated_1$CommonGeneName <- gene_information[rownames(results_sig_down_regulated_1), 2] #adds column with common gene names to results_sig_down_regulated
 
-write.csv(results_sig_up_regulated, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/results_sig_up_regulated.csv") #saves results_sig_up_regulated into .csv file
-write.csv(results_sig_down_regulated, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/results_sig_down_regulated.csv")#saves results_sig_down_regulated into .csv file
+write.csv(results_sig_up_regulated_1, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/results_sig_up_regulated_1.csv") #saves results_sig_up_regulated into .csv file
+write.csv(results_sig_down_regulated_1, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/results_sig_down_regulated_1.csv")#saves results_sig_down_regulated into .csv file
 
-###Kaplan-Meier Plots##
+
+###DESeq2 with young old defined by median###
+
+dds2 <- DESeqDataSetFromMatrix(countData = counts, colData = patient_data, design = ~age_category_median) #creates a DESeqDataSet object from the counts and patient_data matrices, using age_category as the condition
+dds2_obj <- DESeq(dds2) #runs DESeq on the DESeqDataSet object, returning results tables with log^2 fold, padj, etc. values
+resultsNames(dds2_obj) #lists the coefficients, "intercept", "age_category_Mid_vs_Young", "age_category_Old_vs_Young" (why no Mid vs Old?)
+
+results2 <- results(dds2_obj, contrast=c("age_category_median", "Young",'Old')) #extracts analysis table with log^2 fold changes, standard errors, test stats, p-vales, and adjusted p-values
+#contrast=c specifies the comparison for the fold change, with age_category_median as the name of the factor, "Young" as the numerator, and "Old" as the denominator"
+
+head(results2) #view results
+
+results2$FoldChange <- 2^results2$log2FoldChange #creates column in results with FoldChange
+
+write.csv(results2, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/DESeq_Data_2.csv")
+
+##Volcano plot with young old defined by median##
+
+padj_threshold <- 0.05 #significance threshold
+log2FC_threshold <- 1.0 #differential expression threshold
+jpeg("/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/DESeq_Volcano_Plot_2.jpg")
+plot(x= results2$log2FoldChange, y= -log10(results2$padj), main= "Differentially Expressed Genes between Young (< 56 y/o) and Old (>= 56 y/o) Patients", xlab= "log2(Fold Change)", ylab="-log10(p-adjusted value)") #plots significance (-log10(padj)) vs expression (log2FoldChange)
+#abline() plots straight lines on an R plot.
+#v argument is for a vertical line, h argument is for a horizontal line. col argument is color
+abline(v=c(log2FC_threshold, -log2FC_threshold), h= c(-log10(padj_threshold)), col="green") #plots vertical lines at +/- 1 expression and horizontal at significance cutoff of 0.05
+dev.off()
+
+##Tables of Up/Down Regulated Genes with young old defined by median##
+
+results_significant_padj_2 <- results2[results2$padj < padj_threshold, ] #filters for only significant (padj < 0.05) genes, creates table
+
+results_sig_up_regulated_2 <- results_significant_padj_2[results_significant_padj_2$log2FoldChange > log2FC_threshold, ] #UP regulated significant genes
+results_sig_down_regulated_2 <- results_significant_padj_2[results_significant_padj_2$log2FoldChange < -log2FC_threshold, ] #DOWN regulated significant genes
+
+
+gene_information <- rowData(sum_exp)
+
+results_sig_up_regulated_2$CommonGeneName <- gene_information[rownames(results_sig_up_regulated_2), 2] #adds column with common gene names to results_sig_up_regulated
+results_sig_down_regulated_2$CommonGeneName <- gene_information[rownames(results_sig_down_regulated_2), 2] #adds column with common gene names to results_sig_down_regulated
+
+write.csv(results_sig_up_regulated_2, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/results_sig_up_regulated_2.csv") #saves results_sig_up_regulated into .csv file
+write.csv(results_sig_down_regulated_2, "/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/results_sig_down_regulated_2.csv")#saves results_sig_down_regulated into .csv file
+
+
+###Kaplan-Meier Plots###
 
 #CSN3#
 
@@ -128,6 +143,8 @@ write.csv(results_sig_down_regulated, "/Users/nicoleblack/Desktop/d/qbio_data_an
 CSN3_zero_mask <- counts["ENSG00000171209", ] == 0
 CSN3_zero_count <- sum(CSN3_zero_mask)
 CSN3_average <- sum(counts["ENSG00000171209", ])/(ncol(counts)-CSN3_zero_count)
+
+CSN3_median <- rowMedians(counts, rows = "ENSG00000171209")
 patient_data$CSN3_expression = ifelse(counts["ENSG00000171209", patient_data$barcode] > CSN3_average, "High", ifelse(counts["ENSG00000171209", patient_data$barcode] == 0, "No Expression", "Low"))
 
 TCGAanalyze_survival( patient_data, "CSN3_expression", legend="CSN3 Expression Level", filename="/Users/nicoleblack/Desktop/d/qbio_data_analysis_nicole_local/qbio_data_analysis_nicole/data/survival_expression_of_CSN3.pdf")
